@@ -1,0 +1,215 @@
+import numpy as np
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+
+import scipy as sp
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import ElasticNet
+
+
+
+
+df = pd.read_csv("/Users/LENOVO USER/Desktop/concrete.csv", header=None)
+
+df.columns = ['cement', 'slag',	'ash',	'water',	'superplastic',	'coarseagg',	'fineagg',	'age',	'strength']
+df.head()
+print(df.head(5))
+df.describe(include='all')
+print(df.describe(include='all'))
+cols = ['cement', 'slag',	'ash',	'water',	'superplastic',	'coarseagg',	'fineagg',	'age',	'strength']
+
+sns.pairplot(df[cols], size=1.5)
+plt.tight_layout()
+# plt.savefig('images/10_03.png', dpi=300)
+plt.show()
+
+
+
+
+
+X = df[['cement', 'slag',	'ash',	'water',	'superplastic',	'coarseagg',	'fineagg',	'age']].values
+y = df['strength'].values
+#def lin_regplot(X, y, model):
+ #   plt.scatter(X, y, c='steelblue', edgecolor='white', s=70)
+  #  plt.plot(X, model.predict(X), color='black', lw=2)    
+   # return
+
+slr = LinearRegression()
+slr.fit(X, y)
+y_pred = slr.predict(X)
+print('Slope: %.3f' % slr.coef_[0])
+print('Intercept: %.3f' % slr.intercept_)
+
+#lin_regplot(X, y, slr)
+#plt.xlabel('kg of cement in a m3 mixture[cement]')
+#plt.ylabel('Concrete compressive strength in MPa [strength]')
+
+#plt.savefig('images/10_07.png', dpi=300)
+#plt.show()
+
+
+X = df.iloc[:, :-1].values
+y = df['strength'].values
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+slr = LinearRegression()
+slr.fit(X_train, y_train)
+y_train_pred = slr.predict(X_train)
+y_test_pred = slr.predict(X_test)
+
+ary = np.array(range(100000))
+
+
+plt.scatter(y_train_pred,  y_train_pred - y_train,
+            c='steelblue', marker='o', edgecolor='white',
+            label='Training data')
+plt.scatter(y_test_pred,  y_test_pred - y_test,
+            c='limegreen', marker='s', edgecolor='white',
+            label='Test data')
+plt.xlabel('Predicted values')
+plt.ylabel('Residuals')
+plt.legend(loc='upper left')
+plt.hlines(y=0, xmin=-10, xmax=50, color='black', lw=2)
+plt.xlim([-10, 50])
+plt.tight_layout()
+
+# plt.savefig('images/10_09.png', dpi=300)
+plt.show()
+
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+print(slr.coef_)
+print('Intercept: \n', slr.intercept_)
+
+
+
+lasso = Lasso(alpha=0.1)
+lasso.fit(X_train, y_train)
+y_train_pred = lasso.predict(X_train)
+y_test_pred = lasso.predict(X_test)
+print(lasso.coef_)
+print('Intercept: \n', lasso.intercept_)
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+y_train_pred = lasso.predict(X_train)
+y_test_pred = lasso.predict(X_test)
+plt.scatter(y_train_pred,  y_train_pred - y_train,
+            c='steelblue', marker='o', edgecolor='white',
+            label='Training data')
+plt.scatter(y_test_pred,  y_test_pred - y_test,
+            c='limegreen', marker='s', edgecolor='white',
+            label='Test data')
+plt.xlabel('Predicted values')
+plt.ylabel('Residuals')
+plt.legend(loc='upper left')
+plt.hlines(y=0, xmin=-10, xmax=50, color='black', lw=2)
+plt.xlim([-10, 50])
+plt.tight_layout()
+
+
+
+ridge = Ridge(alpha=10)
+ridge.fit(X_train, y_train)
+y_train_pred = ridge.predict(X_train)
+y_test_pred = ridge.predict(X_test)
+print(ridge.coef_)
+print('Intercept Ridge: \n', ridge.intercept_)
+print('MSE train Ridge: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train Ridge: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+y_train_pred = ridge.predict(X_train)
+y_test_pred = ridge.predict(X_test)
+plt.scatter(y_train_pred,  y_train_pred - y_train,
+            c='steelblue', marker='o', edgecolor='white',
+            label='Training data')
+plt.scatter(y_test_pred,  y_test_pred - y_test,
+            c='limegreen', marker='s', edgecolor='white',
+            label='Test data')
+plt.xlabel('Predicted values')
+plt.ylabel('Residuals')
+plt.legend(loc='upper left')
+plt.hlines(y=0, xmin=-10, xmax=50, color='black', lw=2)
+plt.xlim([-10, 50])
+plt.tight_layout()
+
+
+
+
+
+
+elasticnet = ElasticNet(alpha=1, l1_ratio=0.5)
+elasticnet.fit(X_train, y_train)
+y_train_pred = elasticnet.predict(X_train)
+y_test_pred = elasticnet.predict(X_test)
+print(elasticnet.coef_)
+print('Intercept elasticnet: \n', elasticnet.intercept_)
+print('MSE train elasticnet: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train elasticnet: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+y_train_pred = elasticnet.predict(X_train)
+y_test_pred = elasticnet.predict(X_test)
+plt.scatter(y_train_pred,  y_train_pred - y_train,
+            c='steelblue', marker='o', edgecolor='white',
+            label='Training data')
+plt.scatter(y_test_pred,  y_test_pred - y_test,
+            c='limegreen', marker='s', edgecolor='white',
+            label='Test data')
+plt.xlabel('Predicted values')
+plt.ylabel('Residuals')
+plt.legend(loc='upper left')
+plt.hlines(y=0, xmin=-10, xmax=50, color='black', lw=2)
+plt.xlim([-10, 50])
+plt.tight_layout()
+
+
+
+
+
+plt.figure(figsize=(60,15))
+cm = np.corrcoef(df[cols].values.T)
+sns.set(font_scale=3)
+hm = sns.heatmap(cm,
+                 cbar=True,
+                 annot=True,
+                 square=True,
+                 fmt='.2f',
+                 annot_kws={'size': 15},
+                 yticklabels=cols,
+                 xticklabels=cols)
+
+plt.tight_layout()
+# plt.savefig('images/10_04.png', dpi=300)
+plt.show()
+
+
+print("My name is Alexander Ilnytsky")
+print("My NetID is: ai9")
+print("I hereby certify that I have read the University policy on Academic Integrity and that I am not in violation.")
