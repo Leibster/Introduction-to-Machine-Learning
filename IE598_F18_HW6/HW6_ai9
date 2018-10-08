@@ -1,0 +1,85 @@
+from sklearn import __version__ as sklearn_version
+from distutils.version import LooseVersion
+from sklearn import datasets
+import numpy as np
+
+iris = datasets.load_iris()
+X = iris.data[:, [2, 3]]
+y = iris.target
+
+print('Class labels:', np.unique(y))
+
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.1, random_state=1, stratify=y)
+
+print('Labels counts in y:', np.bincount(y))
+print('Labels counts in y_train:', np.bincount(y_train))
+print('Labels counts in y_test:', np.bincount(y_test))
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+from sklearn.tree import DecisionTreeClassifier
+count = 0
+while (count<10):
+    count +=1
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.1, random_state=count, stratify=y)
+    
+    tree = DecisionTreeClassifier(criterion='gini',
+                              random_state=1)
+    tree.fit(X_train, y_train)
+    print('Train Accuracy: %.3f' % tree.score(X_train, y_train))
+    print('Test Accuracy: %.3f' % tree.score(X_test, y_test))
+    
+else:
+    print("count value reached %d" %(count))
+       
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.1, random_state=1, stratify=y)
+
+pipe_lr = make_pipeline(StandardScaler(),
+                        DecisionTreeClassifier(random_state=1))
+
+pipe_lr.fit(X_train, y_train)
+y_pred = pipe_lr.predict(X_test)
+print('Test Accuracy: %.3f' % pipe_lr.score(X_test, y_test))
+
+import numpy as np
+from sklearn.model_selection import StratifiedKFold
+    
+
+kfold = StratifiedKFold(n_splits=10,
+                        random_state=1).split(X_train, y_train)
+
+scores = []
+for k, (train, test) in enumerate(kfold):
+    pipe_lr.fit(X_train[train], y_train[train])
+  
+    score = pipe_lr.score(X_train[test], y_train[test])
+    
+    scores.append(score)
+    
+    print('Fold: %2d, Class dist.: %s, Acc: %.3f' % (k+1,
+          np.bincount(y_train[train]), score)) 
+    
+print('\nCV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+from sklearn.model_selection import cross_val_score
+
+scores = cross_val_score(estimator=pipe_lr,
+                         X=X_train,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+print("My name is Alexander Ilnytsky")
+print("My NetID is: ai9")
+print("I hereby certify that I have read the University policy on Academic Integrity and that I am not in violation.")
