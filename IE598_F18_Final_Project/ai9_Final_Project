@@ -1,0 +1,726 @@
+from matplotlib.colors import ListedColormap
+from sklearn.metrics import accuracy_score
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+import scipy as sp
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import ElasticNet
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn import __version__ as sklearn_version
+from distutils.version import LooseVersion
+from matplotlib.colors import ListedColormap
+
+
+
+df = pd.read_csv("/Users/LENOVO USER/Desktop/MLF_GP1_CreditScore.csv")
+df.head
+
+print(df.head(5))
+df.describe(include='all')
+print(df.describe(include='all'))
+
+df.isnull().any()
+
+
+
+X, y = df.iloc[0:1700,0:25], df.InvGrd
+
+
+X_train, X_test, y_train, y_test =\
+    train_test_split(X, y, 
+                     test_size=0.2, 
+                     random_state=1, 
+                     stratify=y)
+    
+print(X.describe(include='all'))    
+print(y.describe(include='all'))  
+print(df.Rating.describe(include='all'))
+
+
+x = [df.Rating]
+num_bins = 7
+n, bins, patches = plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
+plt.show()
+
+x = [df.InvGrd]
+num_bins = 10
+n, bins, patches = plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
+plt.show()
+
+
+stdsc = StandardScaler()
+X_train_std = stdsc.fit_transform(X_train)
+X_test_std = stdsc.transform(X_test)    
+
+
+
+summary = X.describe()
+print(summary)
+
+print(df.head())
+print(df.tail())
+
+
+#KNN Model
+from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier(n_neighbors=1, p=2, metric ='minkowski')
+knn.fit (X_train_std, y_train)
+X_combined_std = np.vstack((X_train_std, X_test_std))
+y_combined = np.hstack((y_train, y_test))
+
+y_pred = knn.predict(X_test_std)
+
+from sklearn import metrics
+
+print('Train Accuracy: %.3f' % knn.score(X_train_std, y_train))
+print (metrics.accuracy_score(y_test, y_pred))
+print (metrics.confusion_matrix(y_test, y_pred))
+
+
+
+
+
+k_range = range(1,21)
+scores = []
+for k in k_range:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit (X_train_std, y_train)
+    y_pred = knn.predict(X_test_std)
+    scores.append(metrics.accuracy_score(y_test, y_pred))
+scores
+
+
+from sklearn.tree import DecisionTreeClassifier
+tree = DecisionTreeClassifier(criterion='gini',
+                              random_state=1, max_depth=6)
+tree.fit(X_train_std, y_train)
+y_pred = tree.predict(X_test_std)
+#print (metrics.accuracy_score(X_train_std, y_train))
+
+
+
+print (metrics.accuracy_score(y_test, y_pred))
+print (metrics.confusion_matrix(y_test, y_pred))
+
+k_range = range(1,21)
+for k in k_range:
+    tree = DecisionTreeClassifier(criterion='gini',
+                              random_state=1, max_depth = k)
+    tree.fit(X_train_std, y_train)
+    y_pred = tree.predict(X_test_std)
+    print('Train Accuracy: %.3f' % tree.score(X_train_std, y_train))
+    print('Test Accuracy: %.3f' % tree.score(X_test_std, y_test))
+   # print(tree.score(X_train_std, y_train))
+    #print(tree.score(X_test_std, y_test))
+   # print (metrics.accuracy_score(y_test, y_pred))
+ 
+# Logistic regression
+   
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(C=100, random_state=1)
+#lr = LogisticRegression()
+lr.fit(X_train_std, y_train)
+y_pred = lr.predict(X_test_std)
+
+
+y_train_pred = lr.predict(X_train_std)
+print( metrics.accuracy_score(y_train, y_train_pred) )
+
+y_pred = lr.predict(X_test_std)
+print( metrics.accuracy_score(y_test, y_pred) )
+
+print( metrics.confusion_matrix(y_test, y_pred) )
+
+#print('Misclassified samples: %d' % (y_test != y_pred).sum())
+print('Accuracy Logistic Train: %.2f' % lr.score(X_train_std, y_train))
+print('Accuracy Logistic Test: %.2f' % lr.score(X_test_std, y_test))
+
+
+
+
+
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import cross_val_score
+
+
+knn = KNeighborsClassifier(n_neighbors=1, p=2, metric ='minkowski')
+tree = DecisionTreeClassifier(criterion='gini',
+                               max_depth=6)
+lr = LogisticRegression(C=100, random_state=1)
+
+
+
+
+
+scores = cross_val_score(estimator=knn,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=tree,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=lr,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+
+
+
+
+
+
+from sklearn.ensemble import RandomForestClassifier
+
+forest = RandomForestClassifier(criterion='gini',
+                                n_estimators=100, 
+                                random_state=1,
+                                n_jobs=2)
+forest.fit(X_train_std, y_train)
+y_pred = forest.predict(X_test_std)
+
+print('Train Accuracy: %.3f' % forest.score(X_train_std, y_train))
+print('Test Accuracy: %.3f' % forest.score(X_test_std, y_test))
+
+
+
+scores = cross_val_score(estimator=forest,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+
+
+
+
+feat_labels = df.columns[1:]
+
+forest = RandomForestClassifier(n_estimators=100,
+                                random_state=1)
+
+forest.fit(X_train_std, y_train)
+importances = forest.feature_importances_
+
+indices = np.argsort(importances)[::-1]
+
+for f in range(X_train.shape[1]):
+    print("%2d) %-*s %f" % (f + 1, 30, 
+                            feat_labels[indices[f]], 
+                            importances[indices[f]]))
+
+plt.title('Feature Importance')
+plt.bar(range(X_train.shape[1]), 
+        importances[indices],
+        align='center')
+
+plt.xticks(range(X_train.shape[1]), 
+           feat_labels[indices], rotation=90)
+plt.xlim([-1, X_train.shape[1]])
+plt.tight_layout()
+#plt.savefig('images/04_09.png', dpi=300)
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+X, y = df.iloc[0:1700,0:25], df.Rating
+
+X_train, X_test, y_train, y_test =\
+    train_test_split(X, y, 
+                     test_size=0.2, 
+                     random_state=1, 
+                     stratify=y)
+    
+    
+from sklearn.preprocessing import StandardScaler
+stdsc = StandardScaler()
+X_train_std = stdsc.fit_transform(X_train)
+X_test_std = stdsc.transform(X_test)    
+
+
+
+
+#KNN Model
+
+knn = KNeighborsClassifier(n_neighbors=1, p=2, metric ='minkowski')
+knn.fit (X_train_std, y_train)
+X_combined_std = np.vstack((X_train_std, X_test_std))
+y_combined = np.hstack((y_train, y_test))
+
+y_pred = knn.predict(X_test_std)
+
+from sklearn import metrics
+
+print('Train Accuracy: %.3f' % knn.score(X_train_std, y_train))
+print (metrics.accuracy_score(y_test, y_pred))
+print (metrics.confusion_matrix(y_test, y_pred))
+
+
+
+
+
+k_range = range(1,21)
+scores = []
+for k in k_range:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit (X_train_std, y_train)
+    y_pred = knn.predict(X_test_std)
+    #scores.append(metrics.accuracy_score(y_test, y_pred))
+    #print(knn.score(X_train_std, y_train))
+    print(knn.score(X_test_std, y_test))
+   # print (metrics.accuracy_score(y_test, y_pred))
+scores
+
+
+tree = DecisionTreeClassifier(criterion='gini',
+                              random_state=1, max_depth=10)
+tree.fit(X_train_std, y_train)
+y_pred = tree.predict(X_test_std)
+#print (metrics.accuracy_score(X_train_std, y_train))
+
+
+
+print (metrics.accuracy_score(y_test, y_pred))
+print (metrics.confusion_matrix(y_test, y_pred))
+
+k_range = range(1,21)
+for k in k_range:
+    tree = DecisionTreeClassifier(criterion='gini',
+                              random_state=1, max_depth = k)
+    tree.fit(X_train_std, y_train)
+    y_pred = tree.predict(X_test_std)
+    print('Train Accuracy: %.3f' % tree.score(X_train_std, y_train))
+    print('Test Accuracy: %.3f' % tree.score(X_test_std, y_test))
+    #print(tree.score(X_train_std, y_train))
+    #print(tree.score(X_test_std, y_test))
+   # print (metrics.accuracy_score(y_test, y_pred))
+
+
+   
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(C=100, random_state=1)
+#lr = LogisticRegression()
+lr.fit(X_train_std, y_train)
+y_pred = lr.predict(X_test_std)
+
+
+y_train_pred = lr.predict(X_train_std)
+print( metrics.accuracy_score(y_train, y_train_pred) )
+
+y_pred = lr.predict(X_test_std)
+print( metrics.accuracy_score(y_test, y_pred) )
+
+print( metrics.confusion_matrix(y_test, y_pred) )
+
+#print('Misclassified samples: %d' % (y_test != y_pred).sum())
+print('Accuracy Logistic Train: %.2f' % lr.score(X_train_std, y_train))
+print('Accuracy Logistic Test: %.2f' % lr.score(X_test_std, y_test))
+
+
+
+
+
+
+knn = KNeighborsClassifier(n_neighbors=1, p=2, metric ='minkowski')
+tree = DecisionTreeClassifier(criterion='gini',
+                               max_depth=10)
+lr = LogisticRegression(C=100, random_state=1)
+
+
+
+
+
+scores = cross_val_score(estimator=knn,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=tree,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=lr,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+
+
+from sklearn.ensemble import RandomForestClassifier
+
+forest = RandomForestClassifier(criterion='gini',
+                                n_estimators=50, 
+                                random_state=1,
+                                n_jobs=2)
+forest.fit(X_train_std, y_train)
+y_pred = forest.predict(X_test_std)
+
+print('Train Accuracy: %.3f' % forest.score(X_train_std, y_train))
+print('Test Accuracy: %.3f' % forest.score(X_test_std, y_test))
+
+
+
+scores = cross_val_score(estimator=forest,
+                         X=X_train_std,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+feat_labels = df.columns[1:]
+
+forest = RandomForestClassifier(n_estimators=50,
+                                random_state=1)
+
+forest.fit(X_train_std, y_train)
+importances = forest.feature_importances_
+
+indices = np.argsort(importances)[::-1]
+
+for f in range(X_train.shape[1]):
+    print("%2d) %-*s %f" % (f + 1, 30, 
+                            feat_labels[indices[f]], 
+                            importances[indices[f]]))
+
+plt.title('Feature Importance')
+plt.bar(range(X_train.shape[1]), 
+        importances[indices],
+        align='center')
+
+plt.xticks(range(X_train.shape[1]), 
+           feat_labels[indices], rotation=90)
+plt.xlim([-1, X_train.shape[1]])
+plt.tight_layout()
+#plt.savefig('images/04_09.png', dpi=300)
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+############### Part 2
+
+
+
+
+df = pd.read_csv("/Users/LENOVO USER/Desktop/MLF_GP2.csv")
+df.head
+
+print(df.head(5))
+df.describe(include='all')
+print(df.describe(include='all'))
+
+df.isnull().any()
+
+
+
+X, y = df.iloc[0:224,0:15], df.USPHCI
+
+
+X_train, X_test, y_train, y_test =\
+    train_test_split(X, y, 
+                     test_size=0.2, 
+                     random_state=1)
+    
+print(X.describe(include='all'))    
+print(y.describe(include='all'))  
+print(df.USPHCI.describe(include='all'))
+
+
+
+x = [df.USPHCI]
+num_bins = 10
+n, bins, patches = plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
+plt.ylabel('Probability')
+plt.title(r'Histogram of USPHCI ')
+plt.show()
+
+
+
+x = [df.CP1M]
+num_bins = 10
+n, bins, patches = plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
+plt.ylabel('Probability')
+plt.title(r'Histogram of CP1M ')
+plt.show()
+
+
+
+
+
+
+stdsc = StandardScaler()
+X_train_std = stdsc.fit_transform(X_train)
+X_test_std = stdsc.transform(X_test)    
+
+
+
+summary = X.describe()
+print(summary)
+
+print(df.head())
+print(df.tail())
+
+
+
+
+
+
+
+
+
+
+
+
+
+def plot_decision_regions(X, y, classifier, resolution=0.02):
+
+    # setup marker generator and color map
+    markers = ('s', 'x', 'o', '^', 'v')
+    colors = ('red', 'blue', 'lightgreen', 'gray', 'cyan')
+    cmap = ListedColormap(colors[:len(np.unique(y))])
+
+    # plot the decision surface
+    x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    x2_min, x2_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, resolution),
+                           np.arange(x2_min, x2_max, resolution))
+    Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
+    Z = Z.reshape(xx1.shape)
+    plt.contourf(xx1, xx2, Z, alpha=0.4, cmap=cmap)
+    plt.xlim(xx1.min(), xx1.max())
+    plt.ylim(xx2.min(), xx2.max())
+
+    # plot class samples
+    for idx, cl in enumerate(np.unique(y)):
+        plt.scatter(x=X[y == cl, 0], 
+                    y=X[y == cl, 1],
+                    alpha=0.6, 
+                    c=cmap(idx),
+                    edgecolor='black',
+                    marker=markers[idx], 
+                    label=cl)
+
+
+
+
+
+
+
+
+
+
+
+### PCA part
+from sklearn.decomposition import PCA
+pca = PCA()
+X_train_pca = pca.fit_transform(X_train_std)
+pca.explained_variance_ratio_
+
+plt.bar(range(0, 15), pca.explained_variance_ratio_, alpha=0.5, align='center')
+plt.step(range(0, 15), np.cumsum(pca.explained_variance_ratio_), where='mid')
+plt.ylabel('Explained variance ratio')
+plt.xlabel('Principal components')
+
+plt.show()
+
+
+pca = PCA(n_components=2)
+X_train_pca = pca.fit_transform(X_train_std)
+X_test_pca = pca.transform(X_test_std)
+plt.scatter(X_train_pca[:, 0], X_train_pca[:, 1])
+plt.xlabel('PC 1')
+plt.ylabel('PC 2')
+plt.show()
+
+
+# PCA n=3
+pca = PCA(n_components=3)
+X_train_pca = pca.fit_transform(X_train_std)
+X_test_pca = pca.transform(X_test_std)
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import ElasticNet
+
+slr = LinearRegression()
+slr.fit(X_train_pca, y_train)
+y_train_pred = slr.predict(X_train_pca)
+y_test_pred = slr.predict(X_test_pca)
+#y_pred = slr.predict(X_test_pca)
+print(slr.coef_)
+print('Intercept: \n', slr.intercept_)
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+
+
+
+lasso = Lasso(alpha=1)
+lasso.fit(X_train_pca, y_train)
+y_train_pred = lasso.predict(X_train_pca)
+y_test_pred = lasso.predict(X_test_pca)
+
+print(lasso.coef_)
+print('Intercept: \n', lasso.intercept_)
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+
+ridge = Ridge(alpha=100)
+ridge.fit(X_train_pca, y_train)
+y_train_pred = ridge.predict(X_train_pca)
+y_test_pred = ridge.predict(X_test_pca)
+
+print(ridge.coef_)
+print('Intercept: \n', ridge.intercept_)
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+
+
+elasticnet = ElasticNet(l1_ratio=0.999)
+elasticnet.fit(X_train_pca, y_train)
+y_train_pred = elasticnet.predict(X_train_pca)
+y_test_pred = elasticnet.predict(X_test_pca)
+
+print(elasticnet.coef_)
+print('Intercept: \n', elasticnet.intercept_)
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+
+
+
+
+scores = cross_val_score(estimator=slr,
+                         X=X_train_pca,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=lasso,
+                         X=X_train_pca,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=ridge,
+                         X=X_train_pca,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+scores = cross_val_score(estimator=elasticnet,
+                         X=X_train_pca,
+                         y=y_train,
+                         cv=10,
+                         n_jobs=1)
+print('CV accuracy scores: %s' % scores)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+
+
+
+
+
+
+from sklearn.ensemble import RandomForestRegressor
+regr = RandomForestRegressor(random_state=1,
+                             n_estimators=100)
+
+
+regr.fit(X_train_pca, y_train)
+y_train_pred = regr.predict(X_train_pca)
+y_test_pred = regr.predict(X_test_pca)
+
+#print(regr.coef_)
+#print('Intercept: \n', regr.intercept_)
+print('MSE train: %.3f, test: %.3f' % (
+        mean_squared_error(y_train, y_train_pred),
+        mean_squared_error(y_test, y_test_pred)))
+print('R^2 train: %.3f, test: %.3f' % (
+        r2_score(y_train, y_train_pred),
+        r2_score(y_test, y_test_pred)))
+print(regr.feature_importances_)
+
+
